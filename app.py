@@ -2,7 +2,7 @@ from http import HTTPStatus
 from flask import Flask, abort, request, send_from_directory, make_response, render_template
 from werkzeug.datastructures import WWWAuthenticate
 import flask
-from login_form import LoginForm
+from login_form import LoginForm, RegisterForm
 from json import dumps, loads
 from base64 import b64decode
 import sys
@@ -127,6 +127,12 @@ def favicon_png():
 def index_html():
     return send_from_directory(app.root_path,
                         'index.html', mimetype='text/html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    return render_template('./register.html', form=form)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

@@ -85,20 +85,20 @@
 
 <body>
     <div id="page">
-        <h1> ~ Login page </h1>
+        <h1> ~ Register page </h1>
         <form action="" method=post>
             <dl>
                 {{ form.csrf_token }}
                 
-                <dt>Enter username:
+                <dt>Create username:
                 <dd>{{ form.username }}
-                <dt>Enter password:
+                <dt>Create password:
                 <dd>{{ form.password }}
             </dl>
 
-            <input type=submit value=Login>
+            <input type=submit value=Register>
             <input type=hidden value="{{ next or '' }}" name=next>
         </form>
-        <a id="register-link" href="/register">Not registered? -> Login</a>
+        <a id="register-link" href="/login">Already registered? -> Login</a>
     </div>
 </body>
