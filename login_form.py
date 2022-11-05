@@ -1,14 +1,18 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-
-
-class LoginForm(FlaskForm):
-    username = StringField('Username')
-    password = PasswordField('Password')
-    submit = SubmitField('Submit')
+from wtforms.validators import InputRequired, Length, ValidationError
 
 class RegisterForm(FlaskForm):
-    username = StringField('Username')
-    password = PasswordField('Password')
-    submit = SubmitField('Submit')
+    username = StringField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Username"})
+    password = PasswordField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Password"})
+    submit = SubmitField("Register")
+
+class LoginForm(FlaskForm):
+    username = StringField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Username"})
+    password = PasswordField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Password"})
+    submit = SubmitField("Login")
 

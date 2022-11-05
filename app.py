@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from flask import Flask, abort, request, send_from_directory, make_response, render_template
+from flask import Flask, abort, request, send_from_directory, make_response, render_template, url_for, session
 from werkzeug.datastructures import WWWAuthenticate
 import flask
 from login_form import LoginForm, RegisterForm
@@ -15,16 +15,23 @@ from pygments.filters import NameHighlightFilter, KeywordCaseFilter
 from pygments import token;
 from threading import local
 from markupsafe import escape
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+import sqlite3
 
 tls = local()
 inject = "'; insert into messages (sender,message) values ('foo', 'bar');select '"
 cssData = HtmlFormatter(nowrap=True).get_style_defs('.highlight')
-conn = None
+conn = sqlite3.connect('userdata.db')
+
 
 # Set up app
 app = Flask(__name__)
+# User database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///userdata.db'
+userDB = SQLAlchemy(app)
 # The secret key enables storing encrypted session data in a cookie (make a secure random key for this!)
-app.secret_key = 'mY s3kritz'
+app.config['SECRET_KEY'] = 'mY s3kritz'
 
 # Add a login manager to the app
 import flask_login
@@ -41,9 +48,10 @@ users = {'alice' : {'password' : 'password123', 'token' : 'tiktok'},
 # Class to store user info
 # UserMixin provides us with an `id` field and the necessary
 # methods (`is_authenticated`, `is_active`, `is_anonymous` and `get_id()`)
-class User(flask_login.UserMixin):
-    pass
-
+class User(userDB.Model, UserMixin):
+    id = userDB.Column(userDB.Integer, primary_key=True)
+    username = userDB.Column(userDB.String(20), nullable=False, unique=True)
+    password = userDB.Column(userDB.String(80), nullable=False, unique=True)
 
 # This method is called whenever the login manager needs to get
 # the User object for a given user id
@@ -205,14 +213,6 @@ def announcements():
     except Error as e:
         return {'error': f'{e}'}
 
-@app.get('/coffee/')
-def nocoffee():
-    abort(418)
-
-@app.route('/coffee/', methods=['POST','PUT'])
-def gotcoffee():
-    return "Thanks!"
-
 @app.get('/highlight.css')
 def highlightStyle():
     resp = make_response(cssData)
@@ -233,3 +233,6 @@ try:
 except Error as e:
     print(e)
     sys.exit(1)
+
+if __name__ == '__main__':
+    app.run()
