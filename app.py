@@ -1,8 +1,7 @@
 from http import HTTPStatus
-from flask import Flask, abort, request, send_from_directory, make_response, render_template, url_for, session
+from flask import Flask, abort, request, send_from_directory, make_response, render_template, url_for, redirect
 from werkzeug.datastructures import WWWAuthenticate
 import flask
-from login_form import LoginForm, RegisterForm
 from json import dumps, loads
 from base64 import b64decode
 import sys
@@ -16,26 +15,25 @@ from pygments import token;
 from threading import local
 from markupsafe import escape
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
-import sqlite3
+from flask_bcrypt import Bcrypt
+import secrets
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import InputRequired, Length, ValidationError
+import flask_login
+from flask_login import login_required, login_user, UserMixin
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///userdata.db'
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
 tls = local()
-inject = "'; insert into messages (sender,message) values ('foo', 'bar');select '"
 cssData = HtmlFormatter(nowrap=True).get_style_defs('.highlight')
-conn = sqlite3.connect('userdata.db')
-
-
-# Set up app
-app = Flask(__name__)
-# User database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///userdata.db'
-userDB = SQLAlchemy(app)
-# The secret key enables storing encrypted session data in a cookie (make a secure random key for this!)
-app.config['SECRET_KEY'] = 'mY s3kritz'
 
 # Add a login manager to the app
-import flask_login
-from flask_login import login_required, login_user
+
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -48,16 +46,45 @@ users = {'alice' : {'password' : 'password123', 'token' : 'tiktok'},
 # Class to store user info
 # UserMixin provides us with an `id` field and the necessary
 # methods (`is_authenticated`, `is_active`, `is_anonymous` and `get_id()`)
-class User(userDB.Model, UserMixin):
-    id = userDB.Column(userDB.Integer, primary_key=True)
-    username = userDB.Column(userDB.String(20), nullable=False, unique=True)
-    password = userDB.Column(userDB.String(80), nullable=False, unique=True)
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), nullable=False, unique=True)
+    password = db.Column(db.String(80), nullable=False)
+
+with app.app_context():
+    db.create_all()
+
+class RegisterForm(FlaskForm):
+    username = StringField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Username"})
+    password = PasswordField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Password"})
+    submit = SubmitField("Register")
+
+    def validate_username(self, username):
+        username_exists = User.query.filter_by(
+        username=username.data).first()
+
+        if username_exists:
+            raise ValidationError(
+                "Username already exists, try again."
+            )
+
+
+class LoginForm(FlaskForm):
+    username = StringField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Username"})
+    password = PasswordField(validators=[InputRequired(), Length(min=4, max=20)], 
+        render_kw={"placeholder": "Password"})
+    submit = SubmitField("Login") 
+
+
 
 # This method is called whenever the login manager needs to get
 # the User object for a given user id
 @login_manager.user_loader
 def user_loader(user_id):
-    if user_id not in users:
+    if user_id not in User.query.id.data:
         return
 
     # For a real app, we would load the User from a database or something
@@ -139,12 +166,30 @@ def index_html():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
+
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data)
+        new_user = User(username=form.username.data, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+
     return render_template('./register.html', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user:
+            if bcrypt.check_password_hash(user.password, form.password.data):
+                login_user(user)
+                return redirect(url_for("/"))
+        
+    return render_template('login.html', form=form)
+
+
     if form.is_submitted():
         print(f'Received form: {"invalid" if not form.validate() else "valid"} {form.form_errors} {form.errors}')
         print(request.form)

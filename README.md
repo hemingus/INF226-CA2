@@ -1,38 +1,46 @@
 # INF226 Assignment 2 
+---------------------
+Status: Incomplete
+---------------------
+The app does not yet work as intended because of issues creating userdata-table in database file.
+I tried using SQLAlchemy when initiating the SQLite database. 
+My intension was to store id, username and a hashed password when submitting the registration form.
+Because of this issue the app is essentially useless, because registrations don't get stored and thus login fails.
 
 **How to run:**
-Open terminal: python app.py
-Open browser: http://localhost:5000 
-
-
-
+- Open terminal: python app.py
+- Open browser: http://localhost:5000 
 
 **Refactoring code:**
 
+- Secret key randomized using secrets.token_urlsafe()
+    This key shouldn't be in clear text.
+
+- Removed unnessesay files in the code base like hello.py
 - Removed unnessesary code like get coffee etc.
-- Replaced dictionary of users with a database for user information.
-- Using SQLAlchemy for database holding login and registration data.
+    Removing any files/code that the application don't use is a good idea
+    for improving visability and eliminate potential security holes.
+
+- Replace dictionary of users with a database for user information.
+    Instead of storing user information in clear text in a dictionary it is safer
+    and more practical to have such information stored in a database.
+
+- Using SQLAlchemy creating database table for userdata (id/username/password)
+    Considering it didn't work, I should have considered trying something else.
+    But if it did work, it would be a great way of handling the database.
+    Making use of SQLAlchemy ORM for secure queries.
+
 - Encrypting all passwords as they are being created.
+    Imported Bcrypt from flask_bcrypt to encrypt passwords.
 
-TODO: make secure random key (secret key)
+- Using wtforms for Registration and Login.
+    wtforms have methods for validating username and password inputs/submissions.
 
-why flaskwtf ?
-
-Flaskwtf handles CSRF tokens for you.
-
-Flaskwtf has support for Recaptcha.
-
-Flaskwtf has efficient, secure and very well tested field validators. E.g. password fields, username fields etc.
-
-Flaskwtf checks for a proper refererer header as an extra security measure against CSRF.
-
-Flask wtf has native jinja support
+- Using flask_wtf.
+    Flask_wtf handles CSRF tokens.
 
 
-
-Answers to questions:
-
-# Questions:
+# Answers to questions (2b):
 
 **Threat model – who might attack the application?** 
 
@@ -68,23 +76,46 @@ The best you can do is to instill good practices, but it will probably never com
 
 **What are the main attack vectors for the application?**
 
-
+The application could still be vulnerable to XSS-attacks (cross site scripting).
+Bots attacks could still be an issue.
 
 **What should we do (or what have you done) to protect against attacks?**
 
+I have done:
+Set up authentication by username and password.
+Utilized flask_wtf FlaskForm and wtforms validation methods registration and login forms.
+Used bcrypt for encrypting passwords.
+Storing id/username/hashed password in separate database (userdata.db)
+
+Should do:
+Fix the app (in the sense that it doesnt work with creating table in the userdata.db)
+Create message system with properly controlled and sanitized user inputs.
+Use recaptcha for login/registration requests to stop bot flooding attacks. 
+
 **What is the access control model?**
+
+Access control is in place by users creating a unique username and a personal password to identify themselves. 
+This username and password must be entered to get access to the apps service/functionality
+and should grant each user access only to information specific to them.
 
 **How can you know that you security is good enough? (traceability)**
 
+It is hard to know if security is good enough. In this app user activity is traced by session cookies which allows the server side
+to see (metadata such as IP adress etc) who and when a user was connected to the server.
+It would be hard to tell if someones identity was being stolen or impersonated.
+But good tracability greatly helps discovering and pinpointing the source of these issues.
 
 
-more coming...
 
+# Sources:
 
+Original template: https://git.app.uib.no/inf226/22h/login-server
 
+Book: Security for software engineers
 
-Sources:
+Book: Secure by design
 
 https://github.com/arpanneupane19/Python-Flask-Authentication-Tutorial
 
-more coming...
+https://flask.palletsprojects.com/en/2.2.x/api/#sessions
+
