@@ -7,6 +7,10 @@ I tried using SQLAlchemy when initiating the SQLite database.
 My intension was to store id, username and a hashed password when submitting the registration form.
 Because of this issue the app is essentially useless, because registrations don't get stored and thus login fails.
 
+**Fix: (new)** 
+- needs specific version of flask_SQLAlchemy:
+      pip install flask-sqlalchemy==2.5.1
+
 **How to run:**
 - Open terminal: python app.py
 - Open browser: http://localhost:5000 
@@ -50,7 +54,7 @@ the there could potentially be someone interested in accessing messages/messagin
 **What can an attacker do?**
 
 An attacker can try to hack username/password and authenticate themself as someone else.
-Or they could try to break into the database and gain access to user-data.
+Or they could try to break into the database and gain access to user-data/ tamper with data.
 
 **What damage could be done (in terms of confidentiality, integrity, availability)?**
 
@@ -76,6 +80,7 @@ The best you can do is to instill good practices, but it will probably never com
 
 **What are the main attack vectors for the application?**
 
+! App is still extremely vulnerable and prone to SQL-injection (severe weakness)
 The application could still be vulnerable to XSS-attacks (cross site scripting).
 Bots attacks could still be an issue.
 
